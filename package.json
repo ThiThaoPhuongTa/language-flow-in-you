@@ -26,5 +26,8 @@
     "frontend"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "typeorm": "^0.3.27"
+  }
 }
