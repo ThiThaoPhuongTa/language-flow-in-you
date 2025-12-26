@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { UserDTO } from './auth.service';
+import { UserService } from './user.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private userService: UserService, configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req) => {
@@ -13,15 +15,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'defaultSecret',
+      secretOrKey: configService.get<string>('JWT_SECRET')!,
     });
   }
 
   async validate(payload: UserDTO): Promise<UserDTO> {
-    return {
-      userId: payload.userId,
-      username: payload.username,
-      name: payload.name,
-    };
+    if (await this.userService.findBy(payload.username)) {
+      return payload;
+    } else {
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }
